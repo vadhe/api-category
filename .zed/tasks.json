@@ -1,0 +1,14 @@
+[
+  {
+    "label": "Run HTTP Request",
+    "command": "httpyac",
+    "args": ["send", "--line", "$ZED_ROW", "$ZED_FILE"],
+    "reveal": "always",
+  },
+  {
+    "label": "Run All HTTP Requests",
+    "command": "httpyac",
+    "args": ["send", "$ZED_FILE"],
+    "reveal": "always",
+  },
+]
