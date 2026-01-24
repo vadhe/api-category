@@ -1,2 +1,11 @@
-### Health check
+### Get Categories
 GET http://localhost:8080/categories
+
+### Create Category
+POST http://localhost:8080/categories
+Content-Type: application/json
+
+{
+    "name": ""
+    "description": ""
+}

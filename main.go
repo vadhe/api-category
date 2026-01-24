@@ -8,11 +8,16 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello, World!")
 	http.HandleFunc("/categories", func(w http.ResponseWriter, r *http.Request) {
-		category.GetCategories(w, r)
+		switch r.Method {
+		case http.MethodGet:
+			category.GetCategories(w, r)
+		case http.MethodPost:
+			category.CreateCategory(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
 	})
-	// http.HandleFunc("/categories", category.CreateCategory)
 	// http.HandleFunc("/categories", category.UpdateCategory)
 	// http.HandleFunc("/categories", category.DeleteCategory)
 	err := http.ListenAndServe(":8080", nil)
