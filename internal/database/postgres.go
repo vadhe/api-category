@@ -19,10 +19,13 @@ func OpenPostgres() (*sql.DB, error) {
 			log.Println("Note: Error loading .env file locally (expected in Railway deployment)")
 		}
 	}
+
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
-	connStr := fmt.Sprintf("postgres://%v:%v@localhost:5432/%v?sslmode=disable", dbUser, dbPassword, dbName)
+	dbURL := os.Getenv("DB_URL")
+	dbPort := os.Getenv("DB_PORT")
+	connStr := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable", dbUser, dbPassword, dbURL, dbPort, dbName)
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
