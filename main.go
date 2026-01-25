@@ -7,6 +7,7 @@ import (
 
 	"github.com/vadhe/api-category/internal/category/domain"
 	category "github.com/vadhe/api-category/internal/category/handler"
+	"github.com/vadhe/api-category/internal/database"
 )
 
 var data []domain.Category = []domain.Category{
@@ -16,6 +17,13 @@ var data []domain.Category = []domain.Category{
 }
 
 func main() {
+	db, err := database.OpenPostgres()
+	if err != nil {
+		fmt.Println("Error connecting to database:", err)
+		return
+	}
+	defer db.Close()
+
 	http.HandleFunc("/categories/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
@@ -35,7 +43,7 @@ func main() {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
-	err := http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
 		fmt.Println("Error starting server:", err)
 	}
