@@ -11,17 +11,29 @@ import (
 	service "github.com/vadhe/api-category/internal/category/service"
 )
 
-func GetCategories(w http.ResponseWriter, r *http.Request, data []domain.Category) {
+type CategoryHandler struct {
+	service *service.CategoryService
+}
 
+func NewCategoryHandler(s *service.CategoryService) *CategoryHandler {
+	return &CategoryHandler{service: s}
+}
+
+func (h *CategoryHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
+	categories, err := h.service.GetCategories()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(data)
+	err = json.NewEncoder(w).Encode(categories)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-func GetCategoryByID(w http.ResponseWriter, r *http.Request, data []domain.Category) {
+func (h *CategoryHandler) GetCategoryByID(w http.ResponseWriter, r *http.Request) {
 
 	idStr := strings.TrimPrefix(r.URL.Path, "/categories/")
 	id, err := strconv.Atoi(idStr)
@@ -29,22 +41,13 @@ func GetCategoryByID(w http.ResponseWriter, r *http.Request, data []domain.Categ
 		http.Error(w, "Invalid ID format", http.StatusBadRequest)
 		return
 	}
-	var res = domain.Category{}
-	found := false
-	for _, v := range data {
-		if v.ID == id {
-			res = v
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		http.Error(w, "Category not found", http.StatusNotFound)
+	category, err := h.service.GetCategoryByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(res)
+	err = json.NewEncoder(w).Encode(category)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -52,71 +55,55 @@ func GetCategoryByID(w http.ResponseWriter, r *http.Request, data []domain.Categ
 
 }
 
-func CreateCategory(w http.ResponseWriter, r *http.Request) {
-	var res = domain.Category{}
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	err := decoder.Decode(&res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	_, err = service.CreateCategory(res.Name, res.Description)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	var buf bytes.Buffer
-	err = json.NewEncoder(&buf).Encode(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(buf.Bytes())
-}
-
-func UpdateCategory(w http.ResponseWriter, r *http.Request, data []domain.Category) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/categories/")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "Invalid ID format", http.StatusBadRequest)
-		return
-	}
-	found := false
-	foundIndex := -1
-	for i, v := range data {
-		if v.ID == id {
-			found = true
-			foundIndex = i
-			break
-		}
-	}
-
-	if !found {
-		http.Error(w, "Category not found", http.StatusNotFound)
-		return
-	}
+func (h *CategoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	var res = domain.Category{}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&res)
-	if err != nil {
+	if err := decoder.Decode(&res); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	_, err = service.CreateCategory(res.Name, res.Description)
+	category, err := h.service.CreateCategory(res.Name, res.Description)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	res.ID = id
-	data[foundIndex].Name = res.Name
-	data[foundIndex].Description = res.Description
 	var buf bytes.Buffer
-	err = json.NewEncoder(&buf).Encode(res)
+	err = json.NewEncoder(&buf).Encode(category)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(buf.Bytes())
+}
+
+func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/categories/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
+
+	var res = domain.Category{}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err = decoder.Decode(&res); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	category, err := h.service.UpdateCategory(id, res.Name, res.Description)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var buf bytes.Buffer
+	err = json.NewEncoder(&buf).Encode(category)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -128,40 +115,18 @@ func UpdateCategory(w http.ResponseWriter, r *http.Request, data []domain.Catego
 
 }
 
-func DeleteCategory(w http.ResponseWriter, r *http.Request, data *[]domain.Category) {
+func (h *CategoryHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/categories/")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "Invalid ID format", http.StatusBadRequest)
 		return
 	}
-	found := false
-	for _, v := range *data {
-		if v.ID == id {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		http.Error(w, "Category not found", http.StatusNotFound)
-		return
-	}
-	var res = []domain.Category{}
-	for _, val := range *data {
-		if val.ID != id {
-			res = append(res, val)
-		}
-	}
-	*data = res
-	var buf bytes.Buffer
-	err = json.NewEncoder(&buf).Encode(data)
+	err = h.service.DeleteCategory(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(buf.Bytes())
+	w.WriteHeader(http.StatusNoContent)
 }

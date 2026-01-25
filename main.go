@@ -5,16 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/vadhe/api-category/internal/category/domain"
-	category "github.com/vadhe/api-category/internal/category/handler"
+	"github.com/vadhe/api-category/internal/category/handler"
+	"github.com/vadhe/api-category/internal/category/repository"
+	"github.com/vadhe/api-category/internal/category/service"
 	"github.com/vadhe/api-category/internal/database"
 )
-
-var data []domain.Category = []domain.Category{
-	{ID: 1, Name: "Electronics", Description: "Electronic devices"},
-	{ID: 2, Name: "Clothing", Description: "Clothing items"},
-	{ID: 3, Name: "Books", Description: "Books"},
-}
 
 func main() {
 	db, err := database.OpenPostgres()
@@ -23,22 +18,24 @@ func main() {
 		return
 	}
 	defer db.Close()
-
+	repo := repository.NewCategoryRepository(db)
+	svc := service.NewCategoryService(repo)
+	h := handler.NewCategoryHandler(svc)
 	http.HandleFunc("/categories/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			path := strings.TrimPrefix(r.URL.Path, "/categories/")
 			if path == "" || path == "/" {
-				category.GetCategories(w, r, data)
+				h.GetCategories(w, r)
 			} else {
-				category.GetCategoryByID(w, r, data)
+				h.GetCategoryByID(w, r)
 			}
 		case http.MethodPost:
-			category.CreateCategory(w, r)
+			h.CreateCategory(w, r)
 		case http.MethodPut:
-			category.UpdateCategory(w, r, data)
+			h.UpdateCategory(w, r)
 		case http.MethodDelete:
-			category.DeleteCategory(w, r, &data)
+			h.DeleteCategory(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
