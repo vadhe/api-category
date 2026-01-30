@@ -82,13 +82,9 @@ func (r *CategoryRepository) Update(id int, name, description string) (*domain.C
 }
 
 func (r *CategoryRepository) Delete(id int) error {
-
-	err := r.db.QueryRow(`
-		DELETE FROM categories WHERE id = $1
-	`, id).Err()
-
+	err := r.db.QueryRow(`DELETE FROM categories WHERE id = $1 RETURNING id`, id).Scan(&id)
 	if err == sql.ErrNoRows {
-		return nil
+		return err
 	}
 	if err != nil {
 		return err

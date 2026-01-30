@@ -18,7 +18,28 @@ type CategoryHandler struct {
 func NewCategoryHandler(s *service.CategoryService) *CategoryHandler {
 	return &CategoryHandler{service: s}
 }
-
+func HandlerCategory(w http.ResponseWriter, r *http.Request, h *CategoryHandler) {
+	switch r.Method {
+	case http.MethodGet:
+		h.GetCategories(w, r)
+	case http.MethodPost:
+		h.CreateCategory(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+func HandlerCategoryById(w http.ResponseWriter, r *http.Request, h *CategoryHandler) {
+	switch r.Method {
+	case http.MethodGet:
+		h.GetCategoryByID(w, r)
+	case http.MethodPut:
+		h.UpdateCategory(w, r)
+	case http.MethodDelete:
+		h.DeleteCategory(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
 func (h *CategoryHandler) GetCategories(w http.ResponseWriter, r *http.Request) {
 	categories, err := h.service.GetCategories()
 	if err != nil {
