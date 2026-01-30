@@ -4,10 +4,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/vadhe/api-category/internal/category/handler"
-	"github.com/vadhe/api-category/internal/category/repository"
-	"github.com/vadhe/api-category/internal/category/service"
+	handlerCategory "github.com/vadhe/api-category/internal/category/handler"
+	handlerProduct "github.com/vadhe/api-category/internal/product/handler"
+
+	repositoryCategory "github.com/vadhe/api-category/internal/category/repository"
+	serviceCategory "github.com/vadhe/api-category/internal/category/service"
 	"github.com/vadhe/api-category/internal/database"
+	repositoryProduct "github.com/vadhe/api-category/internal/product/repository"
+	serviceProduct "github.com/vadhe/api-category/internal/product/service"
 )
 
 func main() {
@@ -17,17 +21,27 @@ func main() {
 		return
 	}
 	defer db.Close()
-	repo := repository.NewCategoryRepository(db)
-	svc := service.NewCategoryService(repo)
-	h := handler.NewCategoryHandler(svc)
+	repoCategory := repositoryCategory.NewCategoryRepository(db)
+	svcCategory := serviceCategory.NewCategoryService(repoCategory)
+	hCategory := handlerCategory.NewCategoryHandler(svcCategory)
+
+	repoProduct := repositoryProduct.NewProductRepository(db)
+	svcProduct := serviceProduct.NewProductService(repoProduct)
+	hProduct := handlerProduct.NewProductHandler(svcProduct)
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "OK")
 	})
+	http.HandleFunc("/products", func(w http.ResponseWriter, r *http.Request) {
+		handlerProduct.HandlerProduct(w, r, hProduct)
+	})
+	http.HandleFunc("/products/", func(w http.ResponseWriter, r *http.Request) {
+		handlerProduct.HandlerProductById(w, r, hProduct)
+	})
 	http.HandleFunc("/categories", func(w http.ResponseWriter, r *http.Request) {
-		handler.HandlerCategory(w, r, h)
+		handlerCategory.HandlerCategory(w, r, hCategory)
 	})
 	http.HandleFunc("/categories/", func(w http.ResponseWriter, r *http.Request) {
-		handler.HandlerCategoryById(w, r, h)
+		handlerCategory.HandlerCategoryById(w, r, hCategory)
 	})
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {

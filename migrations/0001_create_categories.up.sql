@@ -3,3 +3,10 @@ CREATE TABLE categories (
 	name TEXT NOT NULL,
 	description TEXT NOT NULL
 );
+
+CREATE TABLE products (
+	id SERIAL PRIMARY KEY,
+	name TEXT NOT NULL,
+	price INTEGER NOT NULL,
+	stock INTEGER NOT NULL
+);
