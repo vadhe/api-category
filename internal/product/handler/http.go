@@ -84,7 +84,7 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	product, err := h.service.CreateProduct(res.Name, res.Price, res.Stock)
+	product, err := h.service.CreateProduct(res.Name, res.Price, res.Stock, res.CategoryId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -117,7 +117,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	product, err := h.service.UpdateProduct(id, res.Name, res.Price, res.Stock)
+	product, err := h.service.UpdateProduct(id, res.Name, res.Price, res.Stock, res.CategoryId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

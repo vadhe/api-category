@@ -6,7 +6,7 @@ import (
 	domain "github.com/vadhe/api-category/internal/product/domain"
 )
 
-func CreateProduct(name string, price int, stock int) (*domain.Product, error) {
+func CreateProduct(name string, price int, stock int, categoryId int) (*domain.Product, error) {
 	if name == "" {
 		return nil, errors.New("name is required")
 	}
@@ -16,11 +16,14 @@ func CreateProduct(name string, price int, stock int) (*domain.Product, error) {
 	if stock <= 0 {
 		return nil, errors.New("stock is required")
 	}
-
+	if categoryId <= 0 {
+		return nil, errors.New("categoryId is required")
+	}
 	product := &domain.Product{
-		Name:  name,
-		Price: price,
-		Stock: stock,
+		Name:       name,
+		Price:      price,
+		Stock:      stock,
+		CategoryId: categoryId,
 	}
 
 	return product, nil
@@ -29,8 +32,8 @@ func CreateProduct(name string, price int, stock int) (*domain.Product, error) {
 type Repository interface {
 	FindAll() ([]domain.Product, error)
 	FindByID(id int) (*domain.Product, error)
-	Create(name string, price int, stock int) (*domain.Product, error)
-	Update(id int, name string, price int, stock int) (*domain.Product, error)
+	Create(name string, price int, stock int, categoryId int) (*domain.Product, error)
+	Update(id int, name string, price int, stock int, categoryId int) (*domain.Product, error)
 	Delete(id int) error
 }
 
@@ -59,29 +62,29 @@ func (s *ProductService) GetProductByID(id int) (*domain.Product, error) {
 	}
 	return product, nil
 }
-func (s *ProductService) CreateProduct(name string, price int, stock int) (*domain.Product, error) {
-	newProduct, err := CreateProduct(name, price, stock)
+func (s *ProductService) CreateProduct(name string, price int, stock int, categoryId int) (*domain.Product, error) {
+	newProduct, err := CreateProduct(name, price, stock, categoryId)
 	if err != nil {
 		return nil, err
 	}
 
-	product, err := s.repo.Create(newProduct.Name, newProduct.Price, newProduct.Stock)
+	product, err := s.repo.Create(newProduct.Name, newProduct.Price, newProduct.Stock, newProduct.CategoryId)
 	if err != nil {
 		return nil, err
 	}
 	return product, nil
 }
 
-func (s *ProductService) UpdateProduct(id int, name string, price int, stock int) (*domain.Product, error) {
+func (s *ProductService) UpdateProduct(id int, name string, price int, stock int, categoryId int) (*domain.Product, error) {
 	if id <= 0 {
 		return nil, errors.New("invalid id")
 	}
-	newProduct, err := CreateProduct(name, price, stock)
+	newProduct, err := CreateProduct(name, price, stock, categoryId)
 	if err != nil {
 		return nil, err
 	}
 
-	product, err := s.repo.Update(id, newProduct.Name, newProduct.Price, newProduct.Stock)
+	product, err := s.repo.Update(id, newProduct.Name, newProduct.Price, newProduct.Stock, newProduct.CategoryId)
 	if err != nil {
 		return nil, err
 	}
