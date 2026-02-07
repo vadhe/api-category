@@ -60,7 +60,7 @@ func (r *ProductRepository) FindByID(id int) (*domain.Product, error) {
 	return &product, nil
 }
 
-func (r *ProductRepository) Create(name string, price int, stock int, categoryId int) (*domain.Product, error) {
+func (r *ProductRepository) Create(product *domain.Product) (*domain.Product, error) {
 	row := r.db.QueryRow(`
 		WITH inserted_product AS (
         INSERT INTO products (name, price, stock, category_id)
@@ -71,17 +71,17 @@ func (r *ProductRepository) Create(name string, price int, stock int, categoryId
 	        p.id, p.name, p.price, p.stock, p.category_id, c.name as category_name
 	    FROM inserted_product p
 	    INNER JOIN categories c ON p.category_id = c.id;
-	`, name, price, stock, categoryId)
+	`, product.Name, product.Price, product.Stock, product.CategoryId)
 
-	var product domain.Product
-	err := row.Scan(&product.ID, &product.Name, &product.Price, &product.Stock, &product.CategoryId, &product.CategoryName)
+	var res domain.Product
+	err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Stock, &res.CategoryId, &res.CategoryName)
 	if err != nil {
 		return nil, err
 	}
-	return &product, nil
+	return &res, nil
 }
 
-func (r *ProductRepository) Update(id int, name string, price int, stock int, categoryId int) (*domain.Product, error) {
+func (r *ProductRepository) Update(id int, product *domain.Product) (*domain.Product, error) {
 	row := r.db.QueryRow(`
    		WITH updated_product AS (
         UPDATE products SET name = $2, price = $3, stock = $4, category_id = $5 WHERE id = $1
@@ -90,14 +90,14 @@ func (r *ProductRepository) Update(id int, name string, price int, stock int, ca
            SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name as category_name
            FROM updated_product p
            INNER JOIN categories c ON p.category_id = c.id;
-	`, id, name, price, stock, categoryId)
+	`, id, product.Name, product.Price, product.Stock, product.CategoryId)
 
-	var product domain.Product
-	err := row.Scan(&product.ID, &product.Name, &product.Price, &product.Stock, &product.CategoryId, &product.CategoryName)
+	var res domain.Product
+	err := row.Scan(&res.ID, &res.Name, &res.Price, &res.Stock, &res.CategoryId, &res.CategoryName)
 	if err != nil {
 		return nil, err
 	}
-	return &product, nil
+	return &res, nil
 }
 
 func (r *ProductRepository) Delete(id int) error {

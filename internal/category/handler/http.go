@@ -77,14 +77,14 @@ func (h *CategoryHandler) GetCategoryByID(w http.ResponseWriter, r *http.Request
 }
 
 func (h *CategoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request) {
-	var res = domain.Category{}
+	res := &domain.Category{}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&res); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	category, err := h.service.CreateCategory(res.Name, res.Description)
+	category, err := h.service.CreateCategory(res)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -109,7 +109,7 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var res = domain.Category{}
+	res := &domain.Category{}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 
@@ -117,7 +117,7 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	category, err := h.service.UpdateCategory(id, res.Name, res.Description)
+	category, err := h.service.UpdateCategory(id, res)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

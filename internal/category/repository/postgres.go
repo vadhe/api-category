@@ -52,33 +52,33 @@ func (r *CategoryRepository) FindByID(id int) (*domain.Category, error) {
 	return &categorie, nil
 }
 
-func (r *CategoryRepository) Create(name, description string) (*domain.Category, error) {
+func (r *CategoryRepository) Create(category *domain.Category) (*domain.Category, error) {
 	row := r.db.QueryRow(`
 		INSERT INTO categories (name, description)
 		VALUES ($1, $2)
 		RETURNING id, name, description;
-	`, name, description)
+	`, category.Name, category.Description)
 
-	var categorie domain.Category
-	err := row.Scan(&categorie.ID, &categorie.Name, &categorie.Description)
+	var res domain.Category
+	err := row.Scan(&res.ID, &res.Name, &res.Description)
 	if err != nil {
 		return nil, err
 	}
-	return &categorie, nil
+	return &res, nil
 }
 
-func (r *CategoryRepository) Update(id int, name, description string) (*domain.Category, error) {
+func (r *CategoryRepository) Update(id int, category *domain.Category) (*domain.Category, error) {
 	row := r.db.QueryRow(`
 		UPDATE categories SET name = $2, description = $3 WHERE id = $1
 		RETURNING id, name, description;
-	`, id, name, description)
+	`, id, category.Name, category.Description)
 
-	var categorie domain.Category
-	err := row.Scan(&categorie.ID, &categorie.Name, &categorie.Description)
+	var res domain.Category
+	err := row.Scan(&res.ID, &res.Name, &res.Description)
 	if err != nil {
 		return nil, err
 	}
-	return &categorie, nil
+	return &res, nil
 }
 
 func (r *CategoryRepository) Delete(id int) error {

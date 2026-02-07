@@ -80,14 +80,14 @@ func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
-	var res = domain.Product{}
+	res := &domain.Product{}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&res); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	product, err := h.service.CreateProduct(res.Name, res.Price, res.Stock, res.CategoryId)
+	product, err := h.service.CreateProduct(res)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -112,7 +112,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var res = domain.Product{}
+	res := &domain.Product{}
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 
@@ -120,7 +120,7 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	product, err := h.service.UpdateProduct(id, res.Name, res.Price, res.Stock, res.CategoryId)
+	product, err := h.service.UpdateProduct(id, res)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

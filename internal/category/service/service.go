@@ -6,27 +6,27 @@ import (
 	domain "github.com/vadhe/api-category/internal/category/domain"
 )
 
-func CreateCategory(name, description string) (*domain.Category, error) {
-	if name == "" {
+func CreateCategory(category *domain.Category) (*domain.Category, error) {
+	if category.Name == "" {
 		return nil, errors.New("name is required")
 	}
-	if description == "" {
+	if category.Description == "" {
 		return nil, errors.New("description is required")
 	}
 
-	category := &domain.Category{
-		Name:        name,
-		Description: description,
+	res := &domain.Category{
+		Name:        category.Name,
+		Description: category.Description,
 	}
 
-	return category, nil
+	return res, nil
 }
 
 type Repository interface {
 	FindAll() ([]domain.Category, error)
 	FindByID(id int) (*domain.Category, error)
-	Create(name, description string) (*domain.Category, error)
-	Update(id int, name, description string) (*domain.Category, error)
+	Create(category *domain.Category) (*domain.Category, error)
+	Update(id int, category *domain.Category) (*domain.Category, error)
 	Delete(id int) error
 }
 
@@ -55,33 +55,33 @@ func (s *CategoryService) GetCategoryByID(id int) (*domain.Category, error) {
 	}
 	return category, nil
 }
-func (s *CategoryService) CreateCategory(name, description string) (*domain.Category, error) {
-	newCategory, err := CreateCategory(name, description)
+func (s *CategoryService) CreateCategory(category *domain.Category) (*domain.Category, error) {
+	newCategory, err := CreateCategory(category)
 	if err != nil {
 		return nil, err
 	}
 
-	category, err := s.repo.Create(newCategory.Name, newCategory.Description)
+	res, err := s.repo.Create(newCategory)
 	if err != nil {
 		return nil, err
 	}
-	return category, nil
+	return res, nil
 }
 
-func (s *CategoryService) UpdateCategory(id int, name, description string) (*domain.Category, error) {
+func (s *CategoryService) UpdateCategory(id int, category *domain.Category) (*domain.Category, error) {
 	if id <= 0 {
 		return nil, errors.New("invalid id")
 	}
-	newCategory, err := CreateCategory(name, description)
+	newCategory, err := CreateCategory(category)
 	if err != nil {
 		return nil, err
 	}
 
-	category, err := s.repo.Update(id, newCategory.Name, newCategory.Description)
+	res, err := s.repo.Update(id, newCategory)
 	if err != nil {
 		return nil, err
 	}
-	return category, nil
+	return res, nil
 }
 
 func (s *CategoryService) DeleteCategory(id int) error {

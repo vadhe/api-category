@@ -22,7 +22,6 @@ func CreateTransaction(totalAmount int) (*domain.Transaction, error) {
 
 type ProductRepository interface {
 	FindByID(id int) (*productDomain.Product, error)
-	Update(id int, name string, price int, stock int, categoryId int) (*productDomain.Product, error)
 	DecreaseStockTx(tx *sql.Tx, productID int, qty int) (*productDomain.Product, error)
 }
 type Repository interface {
