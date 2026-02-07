@@ -1,6 +1,7 @@
 package service
 
 import (
+	"database/sql"
 	"errors"
 
 	domain "github.com/vadhe/api-category/internal/product/domain"
@@ -30,11 +31,12 @@ func CreateProduct(name string, price int, stock int, categoryId int) (*domain.P
 }
 
 type Repository interface {
-	FindAll() ([]domain.Product, error)
+	FindAll(name string) ([]domain.Product, error)
 	FindByID(id int) (*domain.Product, error)
 	Create(name string, price int, stock int, categoryId int) (*domain.Product, error)
 	Update(id int, name string, price int, stock int, categoryId int) (*domain.Product, error)
 	Delete(id int) error
+	DecreaseStockTx(tx *sql.Tx, productID int, qty int) (*domain.Product, error)
 }
 
 type ProductService struct {
@@ -45,8 +47,8 @@ func NewProductService(repo Repository) *ProductService {
 	return &ProductService{repo: repo}
 }
 
-func (s *ProductService) GetProducts() ([]domain.Product, error) {
-	return s.repo.FindAll()
+func (s *ProductService) GetProducts(name string) ([]domain.Product, error) {
+	return s.repo.FindAll(name)
 }
 
 func (s *ProductService) GetProductByID(id int) (*domain.Product, error) {

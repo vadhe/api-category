@@ -14,12 +14,16 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (r *ProductRepository) FindAll() ([]domain.Product, error) {
-	rows, err := r.db.Query(`
-	SELECT products.id, products.name, products.price, products.stock, categories.name, categories.id
+func (r *ProductRepository) FindAll(name string) ([]domain.Product, error) {
+	var query = `SELECT products.id, products.name, products.price, products.stock, categories.name, categories.id
     FROM Products
-    INNER JOIN categories ON products.category_id  = categories.id;
-	`)
+    INNER JOIN categories ON products.category_id  = categories.id`
+	var args []interface{}
+	if name != "" {
+		query += " WHERE products.name LIKE $1"
+		args = append(args, "%"+name+"%")
+	}
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -105,4 +109,22 @@ func (r *ProductRepository) Delete(id int) error {
 		return err
 	}
 	return nil
+}
+
+func (r *ProductRepository) DecreaseStockTx(tx *sql.Tx, productID int, qty int) (*domain.Product, error) {
+	row := tx.QueryRow(`
+		WITH updated_product AS (
+			UPDATE products SET stock = stock - $2 WHERE id = $1 RETURNING id, name, price, stock, category_id
+		)
+		SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name as category_name
+		FROM updated_product p
+		INNER JOIN categories c ON p.category_id = c.id;
+	`, productID, qty)
+
+	var product domain.Product
+	err := row.Scan(&product.ID, &product.Name, &product.Price, &product.Stock, &product.CategoryId, &product.CategoryName)
+	if err != nil {
+		return nil, err
+	}
+	return &product, nil
 }

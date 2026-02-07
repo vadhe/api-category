@@ -1,5 +1,5 @@
 ### Get Categories
-GET http://localhost:8080/categories
+GET http://localhost:8080/products?name=ipad
 
 ### Create Category
 POST http://localhost:8080/categories
