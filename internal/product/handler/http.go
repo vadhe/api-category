@@ -3,7 +3,6 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -43,7 +42,6 @@ func HandlerProductById(w http.ResponseWriter, r *http.Request, h *ProductHandle
 }
 func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
-	fmt.Println(name)
 	product, err := h.service.GetProducts(name)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

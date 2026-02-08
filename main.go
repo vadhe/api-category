@@ -49,8 +49,11 @@ func main() {
 	http.HandleFunc("/transactions", func(w http.ResponseWriter, r *http.Request) {
 		handlerTransaction.HandlerTransaction(w, r, hTransaction)
 	})
-	http.HandleFunc("/transactions-checkout", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/checkout", func(w http.ResponseWriter, r *http.Request) {
 		handlerTransaction.HandlerTransactionCheckout(w, r, hTransaction)
+	})
+	http.HandleFunc("/report", func(w http.ResponseWriter, r *http.Request) {
+		handlerTransaction.HandlerReport(w, r, hTransaction)
 	})
 	http.HandleFunc("/categories/", func(w http.ResponseWriter, r *http.Request) {
 		handlerCategory.HandlerCategoryById(w, r, hCategory)

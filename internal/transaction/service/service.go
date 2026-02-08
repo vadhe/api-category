@@ -26,7 +26,9 @@ type ProductRepository interface {
 }
 type Repository interface {
 	FindAll() ([]domain.Transaction, error)
-	CreateTransaction(tx *sql.Tx, items *domain.Transaction) (*domain.Transaction, error)
+	GetReport() (*domain.SalesSummary, error)
+	InsertTransaction(tx *sql.Tx, totalAmount int) (int, error)
+	InsertTransactionDetails(tx *sql.Tx, details []domain.TransactionDetail) error
 }
 
 type TransactionService struct {
@@ -42,13 +44,19 @@ func NewTransactionService(repo Repository, product ProductRepository, db *sql.D
 func (s *TransactionService) GetTransactions() ([]domain.Transaction, error) {
 	return s.repo.FindAll()
 }
-func (s *TransactionService) Checkout(items []domain.CheckoutItem) (*domain.Transaction, error) {
+
+func (s *TransactionService) Checkout(
+	items []domain.CheckoutItem,
+) (*domain.Transaction, error) {
+
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
+
 	transaction := &domain.Transaction{}
+
 	for _, item := range items {
 		product, err := s.product.FindByID(item.ProductID)
 		if err != nil {
@@ -60,20 +68,43 @@ func (s *TransactionService) Checkout(items []domain.CheckoutItem) (*domain.Tran
 		if product.Stock < item.Quantity {
 			return nil, errors.New("stock not enough")
 		}
+
 		newStock := product.Stock - item.Quantity
-		_, err = s.product.DecreaseStockTx(tx, product.ID, newStock)
-		if err != nil {
+		if _, err := s.product.DecreaseStockTx(tx, product.ID, newStock); err != nil {
 			return nil, err
 		}
-		data := domain.TransactionDetail{
-			ProductID:   product.ID,
-			ProductName: product.Name,
-			Quantity:    item.Quantity,
-			Subtotal:    product.Price * item.Quantity,
-		}
-		transaction.TotalAmount += product.Price * item.Quantity
-		transaction.Details = append(transaction.Details, data)
+
+		subtotal := product.Price * item.Quantity
+		transaction.TotalAmount += subtotal
+		transaction.Details = append(transaction.Details, domain.TransactionDetail{
+			ProductID: product.ID,
+			Quantity:  item.Quantity,
+			Subtotal:  subtotal,
+		})
 	}
 
-	return s.repo.CreateTransaction(tx, transaction)
+	transactionID, err := s.repo.InsertTransaction(tx, transaction.TotalAmount)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range transaction.Details {
+		transaction.Details[i].TransactionID = transactionID
+	}
+
+	if err := s.repo.InsertTransactionDetails(tx, transaction.Details); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	transaction.ID = transactionID
+	
+	return transaction, nil
+}
+
+func (s *TransactionService) GetReport() (*domain.SalesSummary, error) {
+	return s.repo.GetReport()
 }
