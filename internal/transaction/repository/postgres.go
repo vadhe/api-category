@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/vadhe/api-category/internal/transaction/domain"
 )
@@ -91,25 +92,38 @@ func (r *TransactionRepository) InsertTransactionDetails(
 	return nil
 }
 
-func (r *TransactionRepository) GetReport() (*domain.SalesSummary, error) {
+func (r *TransactionRepository) GetReport(startDate time.Time, endDate time.Time) (*domain.SalesSummary, error) {
 	var res domain.SalesSummary
 	var productID int
+	var start *time.Time
+	var end *time.Time
+
+	if !startDate.IsZero() {
+		start = &startDate
+	}
+	if !endDate.IsZero() {
+		end = &endDate
+	}
 
 	if err := r.db.QueryRow(`
 		SELECT COALESCE(SUM(total_amount), 0)
 		FROM transactions
-		WHERE created_at >= CURRENT_DATE
-		  AND created_at < CURRENT_DATE + INTERVAL '1 day'
-	`).Scan(&res.TotalRevenue); err != nil {
+		WHERE
+			($1::timestamp IS NULL OR created_at >= $1::timestamp)
+		AND
+			($2::timestamp IS NULL OR created_at < $2::timestamp)
+`, start, end).Scan(&res.TotalRevenue); err != nil {
 		return nil, err
 	}
 
 	if err := r.db.QueryRow(`
 		SELECT COUNT(*)
 		FROM transactions
-		WHERE created_at >= CURRENT_DATE
-		  AND created_at < CURRENT_DATE + INTERVAL '1 day'
-	`).Scan(&res.TotalTransactions); err != nil {
+		WHERE
+			($1::timestamp IS NULL OR created_at >= $1::timestamp)
+		AND
+			($2::timestamp IS NULL OR created_at < $2::timestamp)
+`, start, end).Scan(&res.TotalTransactions); err != nil {
 		return nil, err
 	}
 
@@ -117,12 +131,14 @@ func (r *TransactionRepository) GetReport() (*domain.SalesSummary, error) {
 		SELECT td.product_id, SUM(td.quantity)
 		FROM transaction_details td
 		JOIN transactions t ON t.id = td.transaction_id
-		WHERE t.created_at >= CURRENT_DATE
-		  AND t.created_at < CURRENT_DATE + INTERVAL '1 day'
+		WHERE
+			($1::timestamp IS NULL OR t.created_at >= $1::timestamp)
+		AND
+			($2::timestamp IS NULL OR t.created_at < $2::timestamp)
 		GROUP BY td.product_id
 		ORDER BY SUM(td.quantity) DESC
 		LIMIT 1
-	`).Scan(&productID, &res.MostSoldProduct.QtySold); err != nil {
+`, start, end).Scan(&productID, &res.MostSoldProduct.QtySold); err != nil {
 		return nil, err
 	}
 

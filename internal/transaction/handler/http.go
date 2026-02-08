@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/vadhe/api-category/internal/transaction/domain"
 	"github.com/vadhe/api-category/internal/transaction/service"
@@ -58,7 +59,28 @@ func (h *TransactionHandler) GetTransaction(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *TransactionHandler) GetReport(w http.ResponseWriter, r *http.Request) {
-	report, err := h.service.GetReport()
+	startDateParams := r.URL.Query().Get("start_date")
+	endDateParams := r.URL.Query().Get("end_date")
+	layout := "2006-01-02"
+	var startDate, endDate time.Time
+	if startDateParams != "" {
+		v, err := time.Parse(layout, startDateParams)
+		startDate = v
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	if endDateParams != "" {
+		v, err := time.Parse(layout, endDateParams)
+		endDate = v
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	report, err := h.service.GetReport(startDate, endDate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -96,71 +118,3 @@ func (h *TransactionHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Write(buf.Bytes())
 }
-
-// func (h *TransactionHandler) Checkout(w http.ResponseWriter, r *http.Request) {
-// 	var req domain.CheckoutRequest
-// 	err := json.NewDecoder(r.Body).Decode(&req)
-// 	if err != nil {
-// 		http.Error(w, "Invalid request body", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	transaction, err := h.service.Checkout(req.Items)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	w.Header().Set("Content-Type", "application/json")
-// 	json.NewEncoder(w).Encode(transaction)
-// }
-// func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
-// 	idStr := strings.TrimPrefix(r.URL.Path, "/products/")
-// 	id, err := strconv.Atoi(idStr)
-// 	if err != nil {
-// 		http.Error(w, "Invalid ID format", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	var res = domain.Product{}
-// 	decoder := json.NewDecoder(r.Body)
-// 	decoder.DisallowUnknownFields()
-
-// 	if err = decoder.Decode(&res); err != nil {
-// 		http.Error(w, err.Error(), http.StatusBadRequest)
-// 		return
-// 	}
-// 	product, err := h.service.UpdateProduct(id, res.Name, res.Price, res.Stock, res.CategoryId)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	var buf bytes.Buffer
-// 	err = json.NewEncoder(&buf).Encode(product)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusCreated)
-// 	w.Write(buf.Bytes())
-
-// }
-
-// func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
-// 	idStr := strings.TrimPrefix(r.URL.Path, "/products/")
-// 	id, err := strconv.Atoi(idStr)
-// 	if err != nil {
-// 		http.Error(w, "Invalid ID format", http.StatusBadRequest)
-// 		return
-// 	}
-// 	err = h.service.DeleteProduct(id)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusNoContent)
-// }

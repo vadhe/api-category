@@ -3,6 +3,7 @@ package service
 import (
 	"database/sql"
 	"errors"
+	"time"
 
 	productDomain "github.com/vadhe/api-category/internal/product/domain"
 	"github.com/vadhe/api-category/internal/transaction/domain"
@@ -26,7 +27,7 @@ type ProductRepository interface {
 }
 type Repository interface {
 	FindAll() ([]domain.Transaction, error)
-	GetReport() (*domain.SalesSummary, error)
+	GetReport(startDate time.Time, endDate time.Time) (*domain.SalesSummary, error)
 	InsertTransaction(tx *sql.Tx, totalAmount int) (int, error)
 	InsertTransactionDetails(tx *sql.Tx, details []domain.TransactionDetail) error
 }
@@ -120,6 +121,6 @@ func (s *TransactionService) Checkout(
 	return transaction, nil
 }
 
-func (s *TransactionService) GetReport() (*domain.SalesSummary, error) {
-	return s.repo.GetReport()
+func (s *TransactionService) GetReport(startDate time.Time, endDate time.Time) (*domain.SalesSummary, error) {
+	return s.repo.GetReport(startDate, endDate)
 }
