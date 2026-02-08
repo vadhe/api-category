@@ -114,7 +114,7 @@ func (r *ProductRepository) Delete(id int) error {
 func (r *ProductRepository) DecreaseStockTx(tx *sql.Tx, productID int, qty int) (*domain.Product, error) {
 	row := tx.QueryRow(`
 		WITH updated_product AS (
-			UPDATE products SET stock = stock - $2 WHERE id = $1 RETURNING id, name, price, stock, category_id
+			UPDATE products SET stock = stock - $2 WHERE id = $1  AND stock >= $2 RETURNING id, name, price, stock, category_id
 		)
 		SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name as category_name
 		FROM updated_product p

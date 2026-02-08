@@ -54,30 +54,45 @@ func (s *TransactionService) Checkout(
 		return nil, err
 	}
 	defer tx.Rollback()
-
-	transaction := &domain.Transaction{}
-
+	// dari fe map gabungin qty by id
+	totalQty := make(map[int]int)
 	for _, item := range items {
-		product, err := s.product.FindByID(item.ProductID)
+		if totalQty[item.ProductID] == 0 {
+			totalQty[item.ProductID] = item.Quantity
+		} else {
+			totalQty[item.ProductID] += item.Quantity
+		}
+	}
+	products := make(map[int]productDomain.Product)
+	for productID := range totalQty {
+		p, err := s.product.FindByID(productID)
 		if err != nil {
 			return nil, err
 		}
-		if product == nil {
-			return nil, errors.New("product not found")
-		}
-		if product.Stock < item.Quantity {
+		products[productID] = *p
+	}
+
+	for productID, qty := range totalQty {
+		p := products[productID]
+
+		if p.Stock < qty {
 			return nil, errors.New("stock not enough")
 		}
 
-		newStock := product.Stock - item.Quantity
-		if _, err := s.product.DecreaseStockTx(tx, product.ID, newStock); err != nil {
+		if _, err := s.product.DecreaseStockTx(tx, productID, qty); err != nil {
 			return nil, err
 		}
+	}
 
-		subtotal := product.Price * item.Quantity
+	transaction := &domain.Transaction{}
+	for _, item := range items {
+		p := products[item.ProductID]
+
+		subtotal := p.Price * item.Quantity
 		transaction.TotalAmount += subtotal
+
 		transaction.Details = append(transaction.Details, domain.TransactionDetail{
-			ProductID: product.ID,
+			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 			Subtotal:  subtotal,
 		})
@@ -101,7 +116,7 @@ func (s *TransactionService) Checkout(
 	}
 
 	transaction.ID = transactionID
-	
+
 	return transaction, nil
 }
 
